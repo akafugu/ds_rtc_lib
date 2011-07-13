@@ -138,7 +138,6 @@ WireRtcLib::tm* WireRtcLib::getTime(void)
 	// Clear clock halt bit from read data
 	rtc[0] &= ~(_BV(CH_BIT)); // clear bit
 
-	// fixme: clear clock halt bit from seconds
 	m_tm.sec  = bcd2dec(rtc[0]);
 	m_tm.min  = bcd2dec(rtc[1]);
 	m_tm.hour = bcd2dec(rtc[2]);
@@ -203,6 +202,19 @@ void WireRtcLib::setTime(WireRtcLib::tm* tm)
 	Wire.endTransmission();
 }
 
+void WireRtcLib::setTime_s(uint8_t hour, uint8_t min, uint8_t sec)
+{
+	Wire.beginTransmission(RTC_ADDR);
+	Wire.send(0x0);
+
+	// clock halt bit is 7th bit of seconds: this is always cleared to start the clock
+	Wire.send(dec2bcd(sec)); // seconds
+	Wire.send(dec2bcd(min)); // minutes
+	Wire.send(dec2bcd(hour)); // hours
+	
+	Wire.endTransmission();
+}
+
 // halt/start the clock
 // 7th bit of register 0 (second register)
 // 0 = clock is running
@@ -251,7 +263,7 @@ void WireRtcLib::getTemp(int8_t* i, uint8_t* f)
 		msb = Wire.receive(); // integer part (in twos complement)
 		lsb = Wire.receive(); // fraction part
 		
-		// integer part in whole byte
+		// integer part in entire byte
 		*i = msb;
 		// fractional part in top two bits (increments of 0.25)
 		*f = (lsb >> 6) * 25;
@@ -298,7 +310,7 @@ void WireRtcLib::forceTempConversion(uint8_t block)
 // SRAM: 56 bytes from address 0x08 to 0x3f (DS1307-only)
 void WireRtcLib::getSram(uint8_t* data)
 {
-	// cannot receive 56 bytes in one go, because of the TWI library buffer limit
+	// cannot receive 56 bytes in one go, because of the Wire library buffer limit
 	// so just receive one at a time for simplicity
   	for(int i=0;i<56;i++)
 		data[i] = getSramByte(i);
@@ -306,7 +318,7 @@ void WireRtcLib::getSram(uint8_t* data)
 
 void WireRtcLib::setSram(uint8_t *data)
 {
-	// cannot send 56 bytes in one go, because of the TWI library buffer limit
+	// cannot send 56 bytes in one go, because of the Wire library buffer limit
 	// so just send one at a time for simplicity
   	for(int i=0;i<56;i++)
 		setSramByte(data[i], i);
@@ -377,11 +389,6 @@ void WireRtcLib::SQWEnable(bool enable)
 		Wire.endTransmission();
 	}
 }
-
-#define RTC_SQW_FREQ_1    0b00000000 // 1Hz
-#define RTC_SQW_FREQ_1024 0b00001000 // 1024Hz
-#define RTC_SQW_FREQ_4096 0b00010000 // 4096Hz
-#define RTC_SQW_FREQ_8192 0b00011000 // 8192Hz
 
 void WireRtcLib::SQWSetFreq(enum RTC_SQW_FREQ freq)
 {

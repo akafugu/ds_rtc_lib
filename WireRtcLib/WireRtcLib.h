@@ -68,17 +68,26 @@ public:
    * @return WireRtcLib::tm structure filled with time data. This data is statically allocated by the library, and should not be deleted
    */
   WireRtcLib::tm* getTime(void);
+
   /** Gets the current time from the chip, simplified version
    * @param hour pointer to value to store the current hour
    * @param min pointer to value to store the current minutes
    * @param sec pointer to value to store the curent seconds
    */
   void getTime_s(uint8_t* hour, uint8_t* min, uint8_t* sec);
+
   /** Set the time
    * @param tm Pointer to a WireRtcLib::tm structure filled with the time data to set
    *           Note that
    */
   void setTime(WireRtcLib::tm* tm);
+
+  /* Set the time, simplified version
+   * @param hour The hour to set
+   * @param min  The minutes to set
+   * @param sec  The seconds to set
+   */
+  void setTime_s(uint8_t hour, uint8_t min, uint8_t sec);
 
   // start/stop clock running (DS1307 only)
   void runClock(bool run);
