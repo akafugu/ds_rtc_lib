@@ -541,6 +541,12 @@ void rtc_set_alarm_s(uint8_t hour, uint8_t min, uint8_t sec)
 	}
 }
 
+void rtc_set_alarm(struct tm* tm_)
+{
+	if (!tm_) return;
+	rtc_set_alarm_s(tm_->hour, tm_->min, tm_->sec);
+}
+
 void rtc_get_alarm_s(uint8_t* hour, uint8_t* min, uint8_t* sec)
 {
 	if (s_is_ds1307) {
@@ -553,6 +559,17 @@ void rtc_get_alarm_s(uint8_t* hour, uint8_t* min, uint8_t* sec)
 		*min  = bcd2dec(rtc_read_byte(0x08) & ~0b10000000);
 		*hour = bcd2dec(rtc_read_byte(0x09) & ~0b10000000);
 	}
+}
+
+struct tm* rtc_get_alarm(void)
+{
+	uint8_t hour, min, sec;
+
+	rtc_get_alarm_s(&hour, &min, &sec);
+	_tm.hour = hour;
+	_tm.min = min;
+	_tm.sec = sec;
+	return &_tm;
 }
 
 bool rtc_check_alarm(void)

@@ -471,12 +471,16 @@ void WireRtcLib::resetAlarm(void)
 		setSramByte(0, 2); // second
 	}
 	else {
-		// fixme: implement
+		// writing 0 to bit 7 of all four alarm 1 registers disables alarm
+		write_byte(0, 0x07); // second
+		write_byte(0, 0x08); // minute
+		write_byte(0, 0x09); // hour
+		write_byte(0, 0x0a); // day
 	}
 }
 
 // set the alarm to hour:min:sec
-void WireRtcLib::setAlarm(uint8_t hour, uint8_t min, uint8_t sec)
+void WireRtcLib::setAlarm_s(uint8_t hour, uint8_t min, uint8_t sec)
 {
 	if (m_is_ds1307) {
 		setSramByte(hour, 0); // hour
@@ -484,12 +488,32 @@ void WireRtcLib::setAlarm(uint8_t hour, uint8_t min, uint8_t sec)
 		setSramByte(sec,  2); // sec 
 	}
 	else {
-		// fixme: implement
+		/*
+		 *  07h: A1M1:0  Alarm 1 seconds
+		 *  08h: A1M2:0  Alarm 1 minutes
+		 *  09h: A1M3:0  Alarm 1 hour (bit6 is am/pm flag in 12h mode)
+		 *  0ah: A1M4:1  Alarm 1 day/date (bit6: 1 for day, 0 for date)
+		 *  Sets alarm to fire when hour, minute and second matches
+		 */
+		write_byte(dec2bcd(sec),  0x07); // second
+		write_byte(dec2bcd(min),  0x08); // minute
+		write_byte(dec2bcd(hour), 0x09); // hour
+		write_byte(0b10000001,         0x0a); // day (upper bit must be set)
+
+		// clear alarm flag
+		uint8_t val = read_byte(0x0f);
+		write_byte(val & ~0b00000001, 0x0f);
 	}
 }
 
+void WireRtcLib::setAlarm(WireRtcLib::tm* tm)
+{
+	if (!tm) return;
+	setAlarm_s(tm->hour, tm->min, tm->sec);
+}
+
 // get the currently set alarm
-void WireRtcLib::getAlarm(uint8_t* hour, uint8_t* min, uint8_t* sec)
+void WireRtcLib::getAlarm_s(uint8_t* hour, uint8_t* min, uint8_t* sec)
 {
 	if (m_is_ds1307) {
 		if (hour) *hour = getSramByte(0);
@@ -497,8 +521,21 @@ void WireRtcLib::getAlarm(uint8_t* hour, uint8_t* min, uint8_t* sec)
 		if (sec)  *sec  = getSramByte(2);
 	}
 	else {
-		// fixme: implement
+		*sec  = bcd2dec(read_byte(0x07) & ~0b10000000);
+		*min  = bcd2dec(read_byte(0x08) & ~0b10000000);
+		*hour = bcd2dec(read_byte(0x09) & ~0b10000000);
 	}
+}
+
+WireRtcLib::tm* WireRtcLib::getAlarm()
+{
+	uint8_t hour, min, sec;
+
+	getAlarm_s(&hour, &min, &sec);
+	m_tm.hour = hour;
+	m_tm.min = min;
+	m_tm.sec = sec;
+	return &m_tm;
 }
 
 // check whether or not the alarm is going off
@@ -518,7 +555,13 @@ bool WireRtcLib::checkAlarm(void)
 		return false;
 	}
 	else {
-		// fixme: implement
-		return false;
+		// Alarm 1 flag (A1F) in bit 0
+		uint8_t val = read_byte(0x0f);
+
+		// clear flag when set
+		if (val & 1)
+			write_byte(val & ~0b00000001, 0x0f);
+			
+		return val & 1 ? 1 : 0;
 	}
 }

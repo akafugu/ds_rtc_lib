@@ -112,8 +112,10 @@ public:
 
   // Alarm functionality
   void resetAlarm(void);
-  void setAlarm(uint8_t hour, uint8_t min, uint8_t sec);
-  void getAlarm(uint8_t* hour, uint8_t* min, uint8_t* sec);
+  void setAlarm(WireRtcLib::tm* tm);
+  void setAlarm_s(uint8_t hour, uint8_t min, uint8_t sec);
+  WireRtcLib::tm* getAlarm();
+  void getAlarm_s(uint8_t* hour, uint8_t* min, uint8_t* sec);
   bool checkAlarm(void);
   
 private:

@@ -22,6 +22,22 @@
 
 #define DS1307_SLAVE_ADDR 0b11010000
 
+/** Time structure
+ * 
+ * Both 24-hour and 12-hour time is stored, and is always updated when rtc_get_time is called.
+ * 
+ * When setting time and alarm, 24-hour mode is always used.
+ *
+ * If you run your clock in 12-hour mode:
+ * - set time hour to store in twelveHour and set am to true or false.
+ * - call rtc_12h_translate (this will put the correct value in hour, so you don't have to
+ *   calculate it yourself.
+ * - call rtc_set_alarm or rtc_set_clock
+ *
+ * Note that rtc_set_clock_s, rtc_set_alarm_s, rtc_get_time_s, rtc_set_alarm_s always operate in 24-hour mode
+ * and translation has to be done manually (you can call rtc_24h_to_12h to perform the calculation)
+ *
+ */
 struct tm {
 	int sec;      // 0 to 59
 	int min;      // 0 to 59
