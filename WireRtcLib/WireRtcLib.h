@@ -16,7 +16,7 @@
 #ifndef WIRETRCLIB_H
 #define WIRETRCLIB_H
 
-#include <WProgram.h>
+#include <Arduino.h>
 #include <../Wire/Wire.h>
 
 #include <avr/io.h>

@@ -63,18 +63,18 @@ uint8_t WireRtcLib::bcd2dec(uint8_t b)
 uint8_t WireRtcLib::read_byte(uint8_t offset)
 {
 	Wire.beginTransmission(RTC_ADDR);
-	Wire.send(offset);
+	Wire.write(offset);
 	Wire.endTransmission();
 
 	Wire.requestFrom(RTC_ADDR, 1);
-	return Wire.receive();
+	return Wire.read();
 }
 
 void WireRtcLib::write_byte(uint8_t b, uint8_t offset)
 {
 	Wire.beginTransmission(RTC_ADDR);
-	Wire.send(offset);
-	Wire.send(b);
+	Wire.write(offset);
+	Wire.write(b);
 	Wire.endTransmission();
 }
 
@@ -124,13 +124,13 @@ WireRtcLib::tm* WireRtcLib::getTime(void)
 	// read 7 bytes starting from register 0
 	// sec, min, hour, day-of-week, date, month, year
 	Wire.beginTransmission(RTC_ADDR);
-	Wire.send(0x0);
+	Wire.write((uint8_t)0);
 	Wire.endTransmission();
 	
 	Wire.requestFrom(RTC_ADDR, 7);
 	
 	for(uint8_t i=0; i<7; i++) {
-		rtc[i] = Wire.receive();
+		rtc[i] = Wire.read();
 	}
 	
 	Wire.endTransmission();
@@ -169,13 +169,13 @@ void WireRtcLib::getTime_s(uint8_t* hour, uint8_t* min, uint8_t* sec)
 	// read 7 bytes starting from register 0
 	// sec, min, hour, day-of-week, date, month, year
 	Wire.beginTransmission(RTC_ADDR);
-	Wire.send(0x0);
+	Wire.write((uint8_t)0);
 	Wire.endTransmission();
 	
 	Wire.requestFrom(RTC_ADDR, 7);
 	
 	for(uint8_t i=0; i<7; i++) {
-		rtc[i] = Wire.receive();
+		rtc[i] = Wire.read();
 	}
 	
 	Wire.endTransmission();
@@ -188,16 +188,16 @@ void WireRtcLib::getTime_s(uint8_t* hour, uint8_t* min, uint8_t* sec)
 void WireRtcLib::setTime(WireRtcLib::tm* tm)
 {
 	Wire.beginTransmission(RTC_ADDR);
-	Wire.send(0x0);
+	Wire.write((uint8_t)0);
 
 	// clock halt bit is 7th bit of seconds: this is always cleared to start the clock
-	Wire.send(dec2bcd(tm->sec)); // seconds
-	Wire.send(dec2bcd(tm->min)); // minutes
-	Wire.send(dec2bcd(tm->hour)); // hours
-	Wire.send(dec2bcd(tm->wday)); // day of week
-	Wire.send(dec2bcd(tm->mday)); // day
-	Wire.send(dec2bcd(tm->mon)); // month
-	Wire.send(dec2bcd(tm->year)); // year
+	Wire.write(dec2bcd(tm->sec)); // seconds
+	Wire.write(dec2bcd(tm->min)); // minutes
+	Wire.write(dec2bcd(tm->hour)); // hours
+	Wire.write(dec2bcd(tm->wday)); // day of week
+	Wire.write(dec2bcd(tm->mday)); // day
+	Wire.write(dec2bcd(tm->mon)); // month
+	Wire.write(dec2bcd(tm->year)); // year
 	
 	Wire.endTransmission();
 }
@@ -205,12 +205,12 @@ void WireRtcLib::setTime(WireRtcLib::tm* tm)
 void WireRtcLib::setTime_s(uint8_t hour, uint8_t min, uint8_t sec)
 {
 	Wire.beginTransmission(RTC_ADDR);
-	Wire.send(0x0);
+	Wire.write((uint8_t)0);
 
 	// clock halt bit is 7th bit of seconds: this is always cleared to start the clock
-	Wire.send(dec2bcd(sec)); // seconds
-	Wire.send(dec2bcd(min)); // minutes
-	Wire.send(dec2bcd(hour)); // hours
+	Wire.write(dec2bcd(sec)); // seconds
+	Wire.write(dec2bcd(min)); // minutes
+	Wire.write(dec2bcd(hour)); // hours
 	
 	Wire.endTransmission();
 }
@@ -254,14 +254,14 @@ void WireRtcLib::getTemp(int8_t* i, uint8_t* f)
 	
 	Wire.beginTransmission(RTC_ADDR);
 	// temp registers are 0x11 and 0x12
-	Wire.send(0x11);
+	Wire.write(0x11);
 	Wire.endTransmission();
 
 	Wire.requestFrom(RTC_ADDR, 2);
 
 	if (Wire.available()) {
-		msb = Wire.receive(); // integer part (in twos complement)
-		lsb = Wire.receive(); // fraction part
+		msb = Wire.read(); // integer part (in twos complement)
+		lsb = Wire.read(); // fraction part
 		
 		// integer part in entire byte
 		*i = msb;
@@ -279,18 +279,18 @@ void WireRtcLib::forceTempConversion(uint8_t block)
 
 	// read control register (0x0E)
 	Wire.beginTransmission(RTC_ADDR);
-	Wire.send(0x0E);
+	Wire.write(0x0E);
 	Wire.endTransmission();
 
 	Wire.requestFrom(RTC_ADDR, 1);
-	uint8_t ctrl = Wire.receive();
+	uint8_t ctrl = Wire.read();
 
 	ctrl |= 0b00100000; // Set CONV bit
 
 	// write new control register value
 	Wire.beginTransmission(RTC_ADDR);
-	Wire.send(0x0E);
-	Wire.send(ctrl);
+	Wire.write(0x0E);
+	Wire.write(ctrl);
 	Wire.endTransmission();
 
 	if (!block) return;
@@ -299,10 +299,10 @@ void WireRtcLib::forceTempConversion(uint8_t block)
 	do {
 		// Block until CONV is 0
 		Wire.beginTransmission(RTC_ADDR);
-		Wire.send(0x0E);
+		Wire.write(0x0E);
 		Wire.endTransmission();
 		Wire.requestFrom(RTC_ADDR, 1);
-	} while ((Wire.receive() & 0b00100000) != 0);
+	} while ((Wire.read() & 0b00100000) != 0);
 }
 
 #define DS1307_SRAM_ADDR 0x08
@@ -327,18 +327,18 @@ void WireRtcLib::setSram(uint8_t *data)
 uint8_t WireRtcLib::getSramByte(uint8_t offset)
 {
 	Wire.beginTransmission(RTC_ADDR);
-	Wire.send(DS1307_SRAM_ADDR + offset);
+	Wire.write(DS1307_SRAM_ADDR + offset);
 	Wire.endTransmission();
 
 	Wire.requestFrom(RTC_ADDR, 1);
-	return Wire.receive();
+	return Wire.read();
 }
 
 void WireRtcLib::setSramByte(uint8_t b, uint8_t offset)
 {
 	Wire.beginTransmission(RTC_ADDR);
-	Wire.send(DS1307_SRAM_ADDR + offset);
-	Wire.send(b);
+	Wire.write(DS1307_SRAM_ADDR + offset);
+	Wire.write(b);
 	Wire.endTransmission();
 }
 
@@ -346,12 +346,12 @@ void WireRtcLib::SQWEnable(bool enable)
 {
 	if (m_is_ds1307) {
 		Wire.beginTransmission(RTC_ADDR);
-		Wire.send(0x07);
+		Wire.write(0x07);
 		Wire.endTransmission();
 		
 		// read control
    		Wire.requestFrom(RTC_ADDR, 1);
-		uint8_t control = Wire.receive();
+		uint8_t control = Wire.read();
 
 		if (enable)
 			control |=  0b00010000; // set SQWE to 1
@@ -360,19 +360,19 @@ void WireRtcLib::SQWEnable(bool enable)
 
 		// write control back
 		Wire.beginTransmission(RTC_ADDR);
-		Wire.send(0x07);
-		Wire.send(control);
+		Wire.write(0x07);
+		Wire.write(control);
 		Wire.endTransmission();
 
 	}
 	else { // DS3231
 		Wire.beginTransmission(RTC_ADDR);
-		Wire.send(0x0E);
+		Wire.write(0x0E);
 		Wire.endTransmission();
 		
 		// read control
    		Wire.requestFrom(RTC_ADDR, 1);
-		uint8_t control = Wire.receive();
+		uint8_t control = Wire.read();
 
 		if (enable) {
 			control |=  0b01000000; // set BBSQW to 1
@@ -384,8 +384,8 @@ void WireRtcLib::SQWEnable(bool enable)
 
 		// write control back
 		Wire.beginTransmission(RTC_ADDR);
-		Wire.send(0x0E);
-		Wire.send(control);
+		Wire.write(0x0E);
+		Wire.write(control);
 		Wire.endTransmission();
 	}
 }
@@ -394,39 +394,39 @@ void WireRtcLib::SQWSetFreq(enum RTC_SQW_FREQ freq)
 {
 	if (m_is_ds1307) {
 		Wire.beginTransmission(RTC_ADDR);
-		Wire.send(0x07);
+		Wire.write(0x07);
 		Wire.endTransmission();
 		
 		// read control (uses bits 0 and 1)
    		Wire.requestFrom(RTC_ADDR, 1);
-		uint8_t control = Wire.receive();
+		uint8_t control = Wire.read();
 
 		control &= ~0b00000011; // Set to 0
 		control |= freq; // Set freq bitmask
 
 		// write control back
 		Wire.beginTransmission(RTC_ADDR);
-		Wire.send(0x07);
-		Wire.send(control);
+		Wire.write(0x07);
+		Wire.write(control);
 		Wire.endTransmission();
 
 	}
 	else { // DS3231
 		Wire.beginTransmission(RTC_ADDR);
-		Wire.send(0x0E);
+		Wire.write(0x0E);
 		Wire.endTransmission();
 		
 		// read control (uses bits 3 and 4)
    		Wire.requestFrom(RTC_ADDR, 1);
-		uint8_t control = Wire.receive();
+		uint8_t control = Wire.read();
 
 		control &= ~0b00011000; // Set to 0
 		control |= (freq << 4); // Set freq bitmask
 
 		// write control back
 		Wire.beginTransmission(RTC_ADDR);
-		Wire.send(0x0E);
-		Wire.send(control);
+		Wire.write(0x0E);
+		Wire.write(control);
 		Wire.endTransmission();
 	}
 }
@@ -437,12 +437,12 @@ void WireRtcLib::Osc32kHzEnable(bool enable)
 	if (!m_is_ds3231) return;
 
 	Wire.beginTransmission(RTC_ADDR);
-	Wire.send(0x0F);
+	Wire.write(0x0F);
 	Wire.endTransmission();
 
 	// read status
 	Wire.requestFrom(RTC_ADDR, 1);
-	uint8_t status = Wire.receive();
+	uint8_t status = Wire.read();
 
 	if (enable)
 		status |= 0b00001000; // set to 1
@@ -451,8 +451,8 @@ void WireRtcLib::Osc32kHzEnable(bool enable)
 
 	// write status back
 	Wire.beginTransmission(RTC_ADDR);
-	Wire.send(0x0F);
-	Wire.send(status);
+	Wire.write(0x0F);
+	Wire.write(status);
 	Wire.endTransmission();
 }
 

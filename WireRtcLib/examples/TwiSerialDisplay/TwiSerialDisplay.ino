@@ -14,7 +14,7 @@
  *
  */
 
-#include <WProgram.h>
+#include <Arduino.h>
 #include <Wire.h>
 #include <TWIDisplay.h>
 #include "WireRtcLib.h"
