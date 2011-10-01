@@ -1,7 +1,7 @@
 /*
  * Wire RTC Library: DS1307 and DS3231 driver library
  * Simple demo: Show current time and temperature in the serial console
- * (C) 2011 Akafugu
+ * (C) 2011 Akafugu Corporation
  *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software

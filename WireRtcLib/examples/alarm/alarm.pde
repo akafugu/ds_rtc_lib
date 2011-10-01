@@ -1,7 +1,7 @@
 /*
  * Wire RTC Library: DS1307 and DS3231 driver library
  * Alarm demo: Sets the alarm one minute into the future and waits for it to expire
- * (C) 2011 Akafugu
+ * (C) 2011 Akafugu Corporation
  *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
