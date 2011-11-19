@@ -16,7 +16,11 @@
 #ifndef WIRETRCLIB_H
 #define WIRETRCLIB_H
 
-#include <Arduino.h>
+#if defined(ARDUINO) && ARDUINO >= 100
+#  include <Arduino.h>
+#else
+#  include <WProgram.h>
+#endif
 #include <../Wire/Wire.h>
 
 #include <avr/io.h>

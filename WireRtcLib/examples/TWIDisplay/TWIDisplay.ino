@@ -14,7 +14,6 @@
  *
  */
 
-#include <Arduino.h>
 #include <Wire.h>
 #include <TWIDisplay.h>
 #include "WireRtcLib.h"
@@ -30,13 +29,14 @@ void setup()
   Wire.begin();
   rtc.begin();
   disp.setBrightness(255);
+  disp.clear();
 
   if (rtc.isDS1307())
-    disp.writeInt(1307);
+    disp.print(1307);
   else if (rtc.isDS3231())
-    disp.writeInt(3231);
+    disp.print(3231);
   else
-    disp.writeStr("----"); // autodetection failed
+    disp.print("----"); // autodetection failed
     
   delay(2000);
 }
