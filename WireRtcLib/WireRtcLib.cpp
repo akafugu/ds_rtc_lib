@@ -67,7 +67,9 @@ uint8_t WireRtcLib::read_byte(uint8_t offset)
 	Wire.endTransmission();
 
 	Wire.requestFrom(RTC_ADDR, 1);
-	return Wire.read();
+	
+	if (Wire.available()) return Wire.read();
+	return 0;
 }
 
 void WireRtcLib::write_byte(uint8_t b, uint8_t offset)
@@ -130,7 +132,10 @@ WireRtcLib::tm* WireRtcLib::getTime(void)
 	Wire.requestFrom(RTC_ADDR, 7);
 	
 	for(uint8_t i=0; i<7; i++) {
-		rtc[i] = Wire.read();
+		if (Wire.available())
+			rtc[i] = Wire.read();
+		else
+			break;
 	}
 	
 	Wire.endTransmission();
@@ -175,7 +180,10 @@ void WireRtcLib::getTime_s(uint8_t* hour, uint8_t* min, uint8_t* sec)
 	Wire.requestFrom(RTC_ADDR, 7);
 	
 	for(uint8_t i=0; i<7; i++) {
-		rtc[i] = Wire.read();
+		if (Wire.available())
+			rtc[i] = Wire.read();
+		else
+			break;
 	}
 	
 	Wire.endTransmission();
@@ -259,7 +267,7 @@ void WireRtcLib::getTemp(int8_t* i, uint8_t* f)
 
 	Wire.requestFrom(RTC_ADDR, 2);
 
-	if (Wire.available()) {
+	if (Wire.available() >= 2) {
 		msb = Wire.read(); // integer part (in twos complement)
 		lsb = Wire.read(); // fraction part
 		
@@ -283,7 +291,9 @@ void WireRtcLib::forceTempConversion(uint8_t block)
 	Wire.endTransmission();
 
 	Wire.requestFrom(RTC_ADDR, 1);
-	uint8_t ctrl = Wire.read();
+	uint8_t ctrl;
+	if (Wire.available())
+		ctrl = Wire.read();
 
 	ctrl |= 0b00100000; // Set CONV bit
 
@@ -302,7 +312,7 @@ void WireRtcLib::forceTempConversion(uint8_t block)
 		Wire.write(0x0E);
 		Wire.endTransmission();
 		Wire.requestFrom(RTC_ADDR, 1);
-	} while ((Wire.read() & 0b00100000) != 0);
+	} while (Wire.available() && (Wire.read() & 0b00100000) != 0);
 }
 
 #define DS1307_SRAM_ADDR 0x08
@@ -331,7 +341,9 @@ uint8_t WireRtcLib::getSramByte(uint8_t offset)
 	Wire.endTransmission();
 
 	Wire.requestFrom(RTC_ADDR, 1);
-	return Wire.read();
+	if (Wire.available())
+		return Wire.read();
+	return 0;
 }
 
 void WireRtcLib::setSramByte(uint8_t b, uint8_t offset)
@@ -351,7 +363,9 @@ void WireRtcLib::SQWEnable(bool enable)
 		
 		// read control
    		Wire.requestFrom(RTC_ADDR, 1);
-		uint8_t control = Wire.read();
+		uint8_t control = 0;
+		if (Wire.available())
+			control = Wire.read();
 
 		if (enable)
 			control |=  0b00010000; // set SQWE to 1
@@ -372,7 +386,9 @@ void WireRtcLib::SQWEnable(bool enable)
 		
 		// read control
    		Wire.requestFrom(RTC_ADDR, 1);
-		uint8_t control = Wire.read();
+		uint8_t control = 0;
+		if (Wire.available())
+			control = Wire.read();
 
 		if (enable) {
 			control |=  0b01000000; // set BBSQW to 1
@@ -399,7 +415,9 @@ void WireRtcLib::SQWSetFreq(enum RTC_SQW_FREQ freq)
 		
 		// read control (uses bits 0 and 1)
    		Wire.requestFrom(RTC_ADDR, 1);
-		uint8_t control = Wire.read();
+		uint8_t control = 0;
+		if (Wire.available())
+			control = Wire.read();
 
 		control &= ~0b00000011; // Set to 0
 		control |= freq; // Set freq bitmask
@@ -418,7 +436,9 @@ void WireRtcLib::SQWSetFreq(enum RTC_SQW_FREQ freq)
 		
 		// read control (uses bits 3 and 4)
    		Wire.requestFrom(RTC_ADDR, 1);
-		uint8_t control = Wire.read();
+		uint8_t control = 0;
+		if (Wire.available())
+			control = Wire.read();
 
 		control &= ~0b00011000; // Set to 0
 		control |= (freq << 4); // Set freq bitmask
@@ -442,7 +462,9 @@ void WireRtcLib::Osc32kHzEnable(bool enable)
 
 	// read status
 	Wire.requestFrom(RTC_ADDR, 1);
-	uint8_t status = Wire.read();
+	uint8_t status = 0;
+	if (Wire.available())
+		status = Wire.read();
 
 	if (enable)
 		status |= 0b00001000; // set to 1
