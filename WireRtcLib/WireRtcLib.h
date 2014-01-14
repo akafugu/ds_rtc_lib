@@ -1,6 +1,6 @@
 /*
  * Wire RTC Library: DS1307 and DS3231 driver library
- * (C) 2011 Akafugu Corporation
+ * (C) 2011-2013 Akafugu Corporation
  *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -11,6 +11,8 @@
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
  * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
+ * 06Jan13/wbp - change tm int to uint8_t
+ * 07Jan13/wbp - add makeTime, breakTime
  */
 
 #ifndef WIRETRCLIB_H
@@ -27,21 +29,33 @@
 
 #define DS1307_SLAVE_ADDR 0b11010000
 
+// leap year calulator expects year argument as years offset from 1970
+#define LEAP_YEAR(Y)     ( ((1970+Y)>0) && !((1970+Y)%4) && ( ((1970+Y)%100) || !((1970+Y)%400) ) )
+/* Useful Constants */
+#define SECS_PER_MIN  (60UL)
+#define SECS_PER_HOUR (3600UL)
+#define SECS_PER_DAY  (SECS_PER_HOUR * 24UL)
+#define DAYS_PER_WEEK (7UL)
+#define SECS_PER_WEEK (SECS_PER_DAY * DAYS_PER_WEEK)
+#define SECS_PER_YEAR (SECS_PER_WEEK * 52UL)
+#define SECS_YR_2000  (946684800UL) // the time at the start of y2k
+
+typedef unsigned long time_t;
+
 class WireRtcLib {
 public:
   class tm {
     public:
-    int sec;      // 0 to 59 (or 60 for occasional rare leap-seconds)
-    int min;      // 0 to 59
-    int hour;     // 0 to 23
-    int mday;     // 1 to 31
-    int mon;      // 1 to 12
-    int year;     // 0-99
-    int wday;     // 1-7
-	
+    uint8_t sec;      // 0 to 59 (or 60 for occasional rare leap-seconds)
+    uint8_t min;      // 0 to 59
+    uint8_t hour;     // 0 to 23
+    uint8_t mday;     // 1 to 31
+    uint8_t mon;      // 1 to 12
+    uint8_t year;     // 0-99
+    uint8_t wday;     // 1-7
     // 12-hour clock data (set when READING time, ignored when SETTING time)
     bool am; // true for AM, false for PM
-    int twelveHour; // 12 hour clock time
+    uint8_t twelveHour; // 12 hour clock time
   };
 
 private:
@@ -121,13 +135,18 @@ public:
   WireRtcLib::tm* getAlarm();
   void getAlarm_s(uint8_t* hour, uint8_t* min, uint8_t* sec);
   bool checkAlarm(void);
-  
+	
+	// Conversion utilities
+	void breakTime(time_t time, WireRtcLib::tm* tm);  // break time_t into elements
+	time_t makeTime(WireRtcLib::tm* tm);  // convert time elements into time_t
+
 private:
   uint8_t dec2bcd(uint8_t d);
   uint8_t bcd2dec(uint8_t b);
   uint8_t read_byte(uint8_t offset);
   void write_byte(uint8_t b, uint8_t offset);
+  void write_addr(uint8_t addr);
 };
-
+	
 #endif // WIRETRCLIB_H
 

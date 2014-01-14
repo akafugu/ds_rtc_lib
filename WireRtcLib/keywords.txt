@@ -22,3 +22,5 @@ resetAlarm	KEYWORD2
 setAlarm	KEYWORD2
 getAlarm	KEYWORD2
 checkAlarm	KEYWORD2
+makeTime	KEYWORD2
+breakTime	KEYWORD2
