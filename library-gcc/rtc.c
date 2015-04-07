@@ -149,46 +149,46 @@ void rtc_set_ds3231(void) { s_is_ds1307 = false;  s_is_ds3231 = true;  }
 struct tm* rtc_get_time(void)
 {
 	uint8_t rtc[9];
+	uint8_t century = 0;
 
 	// read 7 bytes starting from register 0
 	// sec, min, hour, day-of-week, date, month, year
 	twi_begin_transmission(RTC_ADDR);
 	twi_send_byte(0x0);
 	twi_end_transmission();
-	
+
 	twi_request_from(RTC_ADDR, 7);
-	
-	for(uint8_t i=0; i<7; i++) {
+
+	for (uint8_t i = 0; i < 7; i++) {
 		rtc[i] = twi_receive();
 	}
-	
+
 	twi_end_transmission();
 
 	// Clear clock halt bit from read data
 	// This starts the clock for a DS1307, and has no effect for a DS3231
 	rtc[0] &= ~(_BV(CH_BIT)); // clear bit
 
-	_tm.sec  = bcd2dec(rtc[0]);
-	_tm.min  = bcd2dec(rtc[1]);
+	_tm.sec = bcd2dec(rtc[0]);
+	_tm.min = bcd2dec(rtc[1]);
 	_tm.hour = bcd2dec(rtc[2]);
 	_tm.mday = bcd2dec(rtc[4]);
-	_tm.mon  = bcd2dec(rtc[5]); // returns 1-12
-	_tm.year = bcd2dec(rtc[6]); // year 0-99
+	_tm.mon = bcd2dec(rtc[5] & 0x1F); // returns 1-12
+	century = (rtc[5] & 0x80) >> 7;
+	_tm.year = century == 1 ? 2000 + bcd2dec(rtc[6]) : 1900 + bcd2dec(rtc[6]); // year 0-99
 	_tm.wday = bcd2dec(rtc[3]); // returns 1-7
-	
+
 	if (_tm.hour == 0) {
 		_tm.twelveHour = 0;
 		_tm.am = 1;
-	}
-	else if (_tm.hour < 12) {
+	} else if (_tm.hour < 12) {
 		_tm.twelveHour = _tm.hour;
 		_tm.am = 1;
-	}
-	else {
+	} else {
 		_tm.twelveHour = _tm.hour - 12;
 		_tm.am = 0;
 	}
-	
+
 	return &_tm;
 }
 
@@ -221,15 +221,24 @@ void rtc_set_time(struct tm* tm_)
 	twi_begin_transmission(RTC_ADDR);
 	twi_send_byte(0x0);
 
+	uint8_t century;
+	if (tm_->year > 2000) {
+		century = 0x80;
+		tm_->year = tm_->year - 2000;
+	} else {
+		century = 0;
+		tm_->year = tm_->year - 1900;
+	}
+
 	// clock halt bit is 7th bit of seconds: this is always cleared to start the clock
 	twi_send_byte(dec2bcd(tm_->sec)); // seconds
 	twi_send_byte(dec2bcd(tm_->min)); // minutes
 	twi_send_byte(dec2bcd(tm_->hour)); // hours
 	twi_send_byte(dec2bcd(tm_->wday)); // day of week
 	twi_send_byte(dec2bcd(tm_->mday)); // day
-	twi_send_byte(dec2bcd(tm_->mon)); // month
+	twi_send_byte(dec2bcd(tm_->mon) + century); // month
 	twi_send_byte(dec2bcd(tm_->year)); // year
-	
+
 	twi_end_transmission();
 }
 
